@@ -4,12 +4,14 @@ import "./App.css"; // Import CSS file for styling
 
 function App() {
   const [tasks, setTasks] = useState([]);
+  const [filteredTasks, setFilteredTasks] = useState([]);
   const [date, setDate] = useState("");
   const [task, setTask] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState("");
+  const [filterKeyword, setFilterKeyword] = useState("");
 
   useEffect(() => {
     fetchTasks();
@@ -19,6 +21,7 @@ function App() {
     try {
       const response = await axios.get(`/tasks/${userId}`);
       setTasks(response.data);
+      setFilteredTasks(response.data);
     } catch (error) {
       console.error("Error fetching tasks:", error);
     }
@@ -64,6 +67,19 @@ function App() {
     }
   };
 
+  const handleFilterChange = (e) => {
+    setFilterKeyword(e.target.value);
+    filterTasks(e.target.value);
+  };
+
+  const filterTasks = (keyword) => {
+    const filtered = tasks.filter((task) => {
+      const taskDate = new Date(task.date).toLocaleDateString();
+      return taskDate.includes(keyword);
+    });
+    setFilteredTasks(filtered);
+  };
+
   if (!isLoggedIn) {
     return (
       <div className="app-container">
@@ -91,40 +107,49 @@ function App() {
   }
 
   return (
-    <div className="app-container">
-      <h1>To-Do List</h1>
-      <div className="input-container">
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="input-date"
-        />
+    <>
+      <div className="app-container">
+        <h1>To-Do List</h1>
+        <div className="input-container">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="input-date"
+          />
+          <input
+            type="text"
+            value={task}
+            onChange={(e) => setTask(e.target.value)}
+            className="input-task"
+          />
+          <button onClick={addTask} className="add-button">
+            Add Task
+          </button>
+        </div>
         <input
           type="text"
-          value={task}
-          onChange={(e) => setTask(e.target.value)}
-          className="input-task"
+          placeholder="Filter tasks"
+          value={filterKeyword}
+          onChange={handleFilterChange}
+          className="filter-input"
         />
-        <button onClick={addTask} className="add-button">
-          Add Task
-        </button>
+        <ul className="task-list">
+          {filteredTasks.map((task) => (
+            <li key={task.id} className="task-item">
+              <span>{new Date(task.date).toLocaleDateString()}</span>
+              <span>{task.task}</span>
+              <button
+                onClick={() => deleteTask(task.id)}
+                className="delete-button"
+              >
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
-      <ul className="task-list">
-        {tasks.map((task) => (
-          <li key={task.id} className="task-item">
-            <span>{task.date}</span>
-            <span>{task.task}</span>
-            <button
-              onClick={() => deleteTask(task.id)}
-              className="delete-button"
-            >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </>
   );
 }
 
